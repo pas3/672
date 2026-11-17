@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Bashir Electronic - GoldHEN 6.72 + Unified 9–14.02</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script>
+var uaFull = navigator.userAgent || "";
+var match = uaFull.match(/PlayStation\s*4[\/\s]+([0-9]+(?:\.[0-9]+)*)/i);
+var isPS4 = match !== null;
+var fwVersion = isPS4 ? match[1] : "Unknown";
+var fwNum = isPS4 ? parseFloat(fwVersion) : NaN;
+
+
+window.setStatusMessage = function (message, status) {
+    var el = document.getElementById("msgs");
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove("msg-success", "msg-failure", "msg-progress");
+    if (status) el.classList.add("msg-" + status);
+};
+
+function showFirmwareVersion() {
+    var badge = document.getElementById("fwBadge");
+    var value = document.getElementById("fwVersion");
+    if (!badge || !value) return;
+    value.textContent = isPS4 ? fwVersion : "غير معروف";
+    badge.classList.add("show");
+}
+document.addEventListener("DOMContentLoaded", showFirmwareVersion);
+
+function onScriptError() {
+    window.setStatusMessage("تعذر تحميل الملفات المطلوبة. يُرجى مسح بيانات المتصفح وإعادة تحميل التخزين المؤقت ...", "failure");
+}
+
+if (!isPS4) {
+    document.addEventListener("DOMContentLoaded", function () {
+        window.setStatusMessage("هذه الصفحة مخصصة لأجهزة PS4. الإصدارات المدعومة: 6.72، 9.00–9.60، 10.00–11.02، 11.50–12.02، 12.50–13.00، 13.02–13.52، و14.00 و14.02.", "failure");
+    });
+} else {
+    // Application Cache is retained for compatible PS4 browser versions.
+    // If the browser does not expose it, continue with the normal online loader.
+    var appCache = window.applicationCache || null;
+    var cacheIsUncached = appCache && appCache.status === 0;
+
+    var cache672Ready = false;
+    if (fwNum === 6.72) {
+        try {
+            cache672Ready = !!(appCache && appCache.status !== 0 && appCache.status !== 5 &&
+                window.localStorage.getItem("bashir_672_cache_version") === "1");
+        } catch (cacheCheckError) {
+            cache672Ready = !!(appCache && appCache.status !== 0 && appCache.status !== 5);
+        }
+    }
+    if (fwNum === 6.72 && !cache672Ready) {
+        window.location.replace("cache672.html");
+    } else if (cacheIsUncached) {
+        if (fwNum >= 9.00 && fwNum <= 9.60) {
+            window.location.replace("cache900.html");
+        } else if (fwNum >= 10.00 && fwNum <= 11.02) {
+            window.location.replace("cachecss.html");
+        } else if ((fwNum >= 11.50 && fwNum <= 12.02) ||
+                   (fwNum >= 12.50 && fwNum <= 13.00) ||
+                   (fwNum >= 13.02 && fwNum <= 13.52) ||
+                   fwNum === 14.00 || fwNum === 14.02) {
+            window.location.replace("cacheslopkit.html");
+        } else {
+            document.addEventListener("DOMContentLoaded", () => {
+                window.setStatusMessage("إصدار النظام غير مدعوم: " + fwVersion, "failure");
+            });
+        }
+    } else {
+        if (fwNum === 6.72) {
+            // Dedicated local 6.72 flow; keep it isolated from the 9–14.02 engines.
+            window.entrypoint672_result = 0;
+            window.exploitsetup672_result = 0;
+            window.config_target = 0x672;
+            window.log = function (message, color) {
+                var translated = {
+                    "Error di Bad Hoist Entrypoint": "فشلت تهيئة مدخل 6.72.",
+                    "Bad Hoist Entrypoint succeeded": "نجحت تهيئة مدخل 6.72.",
+                    "Error di Exploit Setup": "فشل إعداد الاستغلال لإصدار 6.72.",
+                    "Exploit Setup complete\n": "اكتمل إعداد الاستغلال لإصدار 6.72.",
+                    "Starting 6.7x Kernel Exploit...": "جارٍ تشغيل استغلال النواة لإصدار 6.72...",
+                    "BERHASIL!": "نجحت مرحلة النواة. جارٍ تحميل GoldHEN 2.4b18.14...",
+                    "Sudah terjailbreak!": "يبدو أن الجهاز مفعّل مسبقاً.",
+                    "Error di Kernel Exploit": "فشل استغلال النواة لإصدار 6.72.",
+                    "\nTekan tombol PS, restart PS4 dan coba lagi...": "أعد تشغيل جهاز PS4 ثم حاول مجدداً.",
+                    "\nTekan tombol PS untuk keluar": "اضغط زر PS للخروج."
+                };
+                var text = translated[message] || message;
+                var status = color === "red" ? "failure" : (color === "green" ? "success" : "progress");
+                window.setStatusMessage(text, status);
+            };
+            window.setStatusMessage("جارٍ تهيئة مسار GoldHEN 6.72 المحلي...", "progress");
+            window.addEventListener("load", function () {
+                try {
+                    var request = new XMLHttpRequest();
+                    request.open("GET", "672/672entrypoint.js", false);
+                    request.send(null);
+                    if (request.status !== 200 && request.status !== 0) {
+                        throw new Error("تعذر الوصول إلى ملف مدخل 6.72.");
+                    }
+                    if (!request.responseText) throw new Error("ملف مدخل 6.72 فارغ.");
+                    eval.call(top.window, request.responseText);
+                } catch (error) {
+                    window.setStatusMessage("فشل تحميل مدخل 6.72: " + (error.message || error), "failure");
+                    return;
+                }
+                var mainScript = document.createElement("script");
+                mainScript.src = "672/main.js";
+                mainScript.async = false;
+                mainScript.onerror = onScriptError;
+                mainScript.onload = function () {
+                    setTimeout(function () {
+                        if (typeof window.doJailBreak !== "function") {
+                            window.setStatusMessage("تعذر بدء محرك 6.72.", "failure");
+                            return;
+                        }
+                        window.doJailBreak();
+                    }, 1500);
+                };
+                document.head.appendChild(mainScript);
+            }, false);
+        }
+        else if (fwNum >= 9.00 && fwNum <= 9.60) {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = "900/alert.js";
+            script.onerror = onScriptError;
+            document.head.appendChild(script);
+        }
+        else if (fwNum >= 10.00 && fwNum <= 11.02) {
+            var script = document.createElement('script');
+            script.src = "css/main.js";
+            script.onerror = onScriptError;
+            script.onload = function () {
+                setTimeout(function () {
+                    doJb();
+                }, 500);
+            };
+            document.head.appendChild(script);
+        }
+        else if (fwNum >= 11.50 && fwNum <= 12.02) {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = "slopkit/chain_lapse.js";
+            script.onerror = onScriptError;
+            document.head.appendChild(script);
+        }
+        else if (fwNum >= 12.50 && fwNum <= 13.00) {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = "slopkit/chain_poops.js";
+            script.onerror = onScriptError;
+            document.head.appendChild(script);
+        }
+        else if (fwNum >= 13.02 && fwNum <= 13.52) {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = "slopkit/jb.js?v=20";
+            script.onerror = onScriptError;
+            document.head.appendChild(script);
+        }
+		else if (fwNum === 14.00 || fwNum === 14.02) {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = "slopkit/jb.js?v=20";
+            script.onerror = onScriptError;
+            document.head.appendChild(script);
+        }
+    }
+}
+</script>
+<div id="fwBadge" class="fw-badge" aria-live="polite">إصدار النظام المكتشف: <bdi id="fwVersion" dir="ltr">---</bdi></div>
+
+<hr>
+<br>
+<h1 id="msgs" class="msg-progress" aria-live="polite">جارٍ تحميل GoldHEN... يُرجى الانتظار</h1>
+<h1 style="margin-top: 43px; font-size: 16px; font-weight: normal; color: #ffffff;">
+  <span style="color: #ffffff;">تعريب وتطوير:</span> <span style="color: #00e1ff;"> بشير لصيانة الأجهزة الإلكترونية : أجدابيا - شارع طرابلس الداخلي.</span> - <span style="color: #ffffff;">Special Thanks to:</span> 
+  <span style="color: #00e1ff;">Gamer Hack, @_AlAzif, ChendoChap, SiSTR0, Abc</span>
+</h1>
+</body>
+</html>

@@ -1,0 +1,15 @@
+CACHE MANIFEST
+# Bashir Electronic PS4 6.72 cache - GoldHEN 2.4b18.14
+
+CACHE:
+index.html
+cache672.html
+style.css
+img.jpg
+goldhen.bin
+672/672entrypoint.js
+672/672kexploit.js
+672/main.js
+
+NETWORK:
+*

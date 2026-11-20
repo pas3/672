@@ -1,0 +1,21 @@
+Bashir b2 - Experimental cache navigation test
+
+Based on the supplied b2(1).zip. The original archive was not modified.
+
+Only these files were changed:
+- cache900.html
+- cachecss.html
+- cacheslopkit.html
+
+Change: removed the three-line automatic history.replaceState/history.go(-histlength) sequence from each cache installer page. This sequence could move the browser away from the cache installer before its AppCache events complete. The pages now remain open while cache progress/completion events are handled.
+
+No exploit JavaScript, offsets, payloads, firmware routing, styles, or manifest entries were intentionally changed.
+
+Test procedure:
+1. Keep the original b2 folder backed up.
+2. Deploy this experimental copy to a separate test path/host, not over the production copy.
+3. On PS4, open the appropriate firmware path while online and let the cache finish.
+4. Close the browser completely, disable internet, reopen the browser, and test loading again.
+5. Repeat on each supported firmware group. Record the firmware, whether cache reaches 100%, and whether the offline launch completes.
+
+Important: This is an experimental navigation change, not a guarantee of offline operation. AppCache behavior must be verified on the actual PS4 browser.
